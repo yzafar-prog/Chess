@@ -1,0 +1,31 @@
+{
+  "name": "chess-analyzer",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Engine-verified chess game analysis: paste a PGN, Stockfish checks every move, then get coaching on best moves and strategy.",
+  "type": "module",
+  "license": "GPL-3.0-or-later",
+  "scripts": {
+    "postinstall": "node scripts/copy-engine.mjs",
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "analyze": "node --experimental-strip-types scripts/analyze-cli.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.131.0",
+    "@lichess-org/chessground": "^10.1.1",
+    "chess.js": "^1.4.0",
+    "stockfish": "^19.0.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "@types/node": "^26.6.4",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.2",
+    "vitest": "^5.0.3"
+  }
+}

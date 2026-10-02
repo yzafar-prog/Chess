@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Paste a PGN and get every move checked by Stockfish, with coaching on best moves and strategy." />
+    <title>Chess Analyzer</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%99%9E%3C/text%3E%3C/svg%3E" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <span class="logo" aria-hidden="true">♞</span>
+        <div>
+          <h1>Chess Analyzer</h1>
+          <p class="tagline">Every move checked by Stockfish 19 — running locally in your browser.</p>
+        </div>
+      </div>
+      <span id="engine-status" class="engine-status" title="Engine status">Engine: not started</span>
+    </header>
+
+    <main>
+      <section id="input-panel" class="card">
+        <div class="input-grid">
+          <div class="pgn-col">
+            <label for="pgn" class="label">Paste your game (PGN)</label>
+            <textarea id="pgn" spellcheck="false" placeholder='[White "You"]&#10;[Black "Opponent"]&#10;&#10;1. e4 e5 2. Nf3 Nc6 ...'></textarea>
+            <div class="row gap">
+              <label class="button secondary file-button">
+                Open .pgn file
+                <input id="pgn-file" type="file" accept=".pgn,.txt,application/x-chess-pgn" hidden />
+              </label>
+              <button id="sample" class="button secondary" type="button">Load a sample game</button>
+              <select id="game-select" class="hidden" aria-label="Choose game"></select>
+            </div>
+          </div>
+          <div class="settings-col">
+            <label class="label" for="player-name">Your username <span class="muted">(optional)</span></label>
+            <input id="player-name" type="text" placeholder="Matches the White/Black tags" autocomplete="off" />
+
+            <label class="label" for="side">You played</label>
+            <select id="side">
+              <option value="auto">Detect from username</option>
+              <option value="w">White</option>
+              <option value="b">Black</option>
+            </select>
+
+            <label class="label" for="depth">Engine depth</label>
+            <select id="depth">
+              <option value="12">Quick — depth 12</option>
+              <option value="16" selected>Standard — depth 16</option>
+              <option value="20">Deep — depth 20</option>
+              <option value="24">Very deep — depth 24 (slow)</option>
+            </select>
+
+            <label class="label" for="engine-flavor">Engine build</label>
+            <select id="engine-flavor">
+              <option value="lite">Stockfish 19 lite (fast download)</option>
+              <option value="full" disabled>Stockfish 19 full (install with FULL_ENGINE=1)</option>
+            </select>
+
+            <button id="analyze" class="button primary" type="button">Analyze game</button>
+            <div id="progress" class="progress hidden" role="status">
+              <div class="progress-track"><div id="progress-bar" class="progress-bar"></div></div>
+              <div class="row between">
+                <span id="progress-text">Starting engine…</span>
+                <button id="cancel" class="link-button" type="button">Cancel</button>
+              </div>
+            </div>
+            <p id="input-error" class="error hidden" role="alert"></p>
+          </div>
+        </div>
+      </section>
+
+      <section id="results" class="hidden">
+        <div id="game-title" class="game-title"></div>
+        <div class="analysis-grid">
+          <div class="board-col">
+            <div class="board-wrap">
+              <div id="eval-bar" class="eval-bar" aria-hidden="true">
+                <div id="eval-bar-fill" class="eval-bar-fill"></div>
+                <span id="eval-bar-text" class="eval-bar-text"></span>
+              </div>
+              <div id="board" class="board"></div>
+            </div>
+            <div class="board-controls">
+              <button class="icon-button" data-nav="start" title="Start (Home)" aria-label="Start">⏮</button>
+              <button class="icon-button" data-nav="prev" title="Previous (←)" aria-label="Previous move">◀</button>
+              <button class="icon-button" data-nav="next" title="Next (→)" aria-label="Next move">▶</button>
+              <button class="icon-button" data-nav="end" title="End (End)" aria-label="End">⏭</button>
+              <button class="icon-button" id="flip" title="Flip board (f)" aria-label="Flip board">⇅</button>
+              <button class="icon-button" id="next-mistake" title="Next mistake of yours (n)">Next error ▶▶</button>
+            </div>
+            <p class="legend">
+              <span class="swatch green"></span> engine's best move instead
+              <span class="swatch red"></span> how the opponent punishes it
+            </p>
+            <div id="variation-banner" class="variation-banner hidden">
+              <span id="variation-text"></span>
+              <button id="variation-exit" class="link-button" type="button">Back to game</button>
+            </div>
+          </div>
+
+          <div class="side-col">
+            <div id="move-detail" class="card detail"></div>
+            <div class="card moves-card">
+              <h2 class="card-title">Moves</h2>
+              <div id="move-list" class="move-list"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2 class="card-title">Evaluation</h2>
+          <div id="eval-graph" class="eval-graph"></div>
+        </div>
+
+        <div id="coaching" class="card coaching"></div>
+
+        <div class="card claude-card">
+          <h2 class="card-title">Written review by Claude <span class="muted">(optional)</span></h2>
+          <p class="muted small">
+            Claude writes the explanation, but it receives only the engine-verified evaluations and lines above and is told
+            not to calculate anything itself. Any move it mentions that isn't in the engine data gets flagged. Your API key
+            is sent directly from your browser to the Claude API and nowhere else.
+          </p>
+          <div class="row gap wrap">
+            <input id="api-key" type="password" placeholder="Anthropic API key (sk-ant-…)" autocomplete="off" />
+            <label class="checkbox"><input id="remember-key" type="checkbox" /> Remember on this device</label>
+            <button id="claude-go" class="button primary" type="button">Write review</button>
+          </div>
+          <p id="claude-error" class="error hidden" role="alert"></p>
+          <div id="claude-warning" class="warning hidden"></div>
+          <article id="claude-output" class="prose"></article>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer muted small">
+      Analysis by <a href="https://stockfishchess.org" target="_blank" rel="noopener">Stockfish</a> (GPLv3) via
+      <a href="https://github.com/nmrugg/stockfish.js" target="_blank" rel="noopener">stockfish.js</a>.
+      Win-chance model and accuracy formula follow lichess.
+    </footer>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
