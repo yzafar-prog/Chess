@@ -42,6 +42,23 @@
   }
 }
 
+:root[data-theme="dark"] {
+  --bg: #161618;
+  --card: #1f1f22;
+  --text: #ececef;
+  --muted: #9b9ba3;
+  --border: #2e2e33;
+  --accent: #4fa57a;
+  --chip: #2a2a2f;
+  --chip-hover: #36363c;
+  --graph-white: #d9d9de;
+  --graph-black: #2a2a2f;
+  --warning-bg: #3a3218;
+  --warning-border: #8a7330;
+  --error: #ff8a80;
+  color-scheme: dark;
+}
+
 * {
   box-sizing: border-box;
 }
